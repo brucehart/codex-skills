@@ -13,9 +13,12 @@ Implement unaddressed PR feedback by reading the PR conversation and review thre
 
 ### 1) Gather PR context
 
-- Use `gh pr view <PR#> --json title,number,author,baseRefName,headRefName,headRepository,repository,reviewDecision` to capture branch names and repo.
-- Use `gh pr view <PR#> --comments` and `gh pr view <PR#> --review-comments` to read the full comment thread.
-- Use `gh pr view <PR#> --json reviews,comments,reviewThreads` if you need structured data for sorting or filtering.
+- Use `gh pr view <PR#> --json title,number,author,baseRefName,headRefName,headRepository,headRepositoryOwner,reviewDecision,url` to capture branch names and repo.
+- Use `gh pr view <PR#> --comments` to read top-level PR conversation comments.
+- Use the API to read inline review comments (line comments), which `gh pr view` may not expose:
+  - `gh api repos/<owner>/<repo>/pulls/<PR#>/comments --paginate`
+- Optionally fetch review metadata:
+  - `gh api repos/<owner>/<repo>/pulls/<PR#>/reviews`
 
 ### 2) Identify the project owner
 
