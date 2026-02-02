@@ -18,28 +18,35 @@ Use this workflow to implement issue-driven changes with gh, keep work isolated 
 - Use `gh issue view <id> --web` only when needed; prefer `gh issue view <id>` for CLI details.
 - Capture required acceptance criteria, labels, and any linked PRs.
 
-3) Create a branch
+3) Synchronize with origin
+- Ensure local `main` is up to date before branching to avoid merge conflicts.
+- Suggested sequence:
+  - `git fetch origin`
+  - `git checkout main`
+  - `git pull --ff-only origin main`
+
+4) Create a branch
 - Base on `main` unless the repo uses a different default.
 - Suggested naming: `issue-<id>-<short-slug>` or `issues-<id1>-<id2>-<slug>`.
 
-4) Implement changes
+5) Implement changes
 - Follow repo instructions and existing patterns.
 - Keep scope tight to the issue(s).
 - Add or update tests when reasonable.
 
-5) Validate
+6) Validate
 - Run the smallest test or build commands that establish confidence.
 - If tests are not run, state why in the PR description.
 
-6) Commit
+7) Commit
 - Use a clear commit message, e.g. `Fix #123: <short summary>` or `Implement #123/#124: <summary>`.
 
-7) Create PR and link issues
+8) Create PR and link issues
 - Use `gh pr create --base main --head <branch>`.
 - Include `Fixes #<id>` or `Closes #<id>` in the PR body to auto-link.
 - For multiple issues, list each on its own line.
 
-8) Share outcome
+9) Share outcome
 - Provide the PR URL, branch name, and a brief summary.
 - Call out any follow-ups or risks.
 

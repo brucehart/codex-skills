@@ -40,7 +40,12 @@ Implement unaddressed PR feedback by reading the PR conversation and review thre
 - Only implement items that are clearly unaddressed.
 - If unclear, leave a brief note in the sub-PR description about the ambiguity.
 
-### 5) Create a stacked sub-PR branch
+### 5) Synchronize with origin
+
+- Ensure local refs are up to date before checking out the PR head:
+  - `git fetch origin --prune`
+
+### 6) Create a stacked sub-PR branch
 
 - Create a new branch from the PR head branch (not from `main`):
   - `gh pr checkout <PR#>`
@@ -48,7 +53,7 @@ Implement unaddressed PR feedback by reading the PR conversation and review thre
 - Implement the updates locally, following the owner's guidance for how to fix issues.
 - Commit changes with a concise message that references the PR number.
 
-### 6) Open a sub-PR targeting the original PR branch
+### 7) Open a sub-PR targeting the original PR branch
 
 - Push the branch and create a PR with the base set to the original PR head branch:
   - `git push -u origin pr-<PR#>-feedback`
@@ -56,7 +61,7 @@ Implement unaddressed PR feedback by reading the PR conversation and review thre
 - If the repo uses stacked PR conventions (labels, prefixes, or templates), follow them.
 - After the sub-PR is committed and pushed, comment on the original PR with a link to the new sub-PR and a brief description of the changes it includes.
 
-### 7) Summarize and notify
+### 8) Summarize and notify
 
 - In the sub-PR description and/or a PR comment, summarize which feedback items were addressed and which were intentionally ignored due to owner instruction.
 - If any feedback was deferred, state why and where it should be handled.
@@ -66,3 +71,27 @@ Implement unaddressed PR feedback by reading the PR conversation and review thre
 - Never implement feedback the owner explicitly says to ignore.
 - If the owner’s guidance is ambiguous, ask for clarification in the sub-PR or PR comment rather than guessing.
 - Keep the sub-PR focused on feedback items only; avoid unrelated refactors.
+
+## Suggested gh commands (examples)
+
+```bash
+gh pr view 123 --json title,number,author,baseRefName,headRefName,headRepository,headRepositoryOwner,reviewDecision,url
+gh pr view 123 --comments
+gh api repos/<owner>/<repo>/pulls/123/comments --paginate
+gh api repos/<owner>/<repo>/pulls/123/reviews
+
+git fetch origin --prune
+gh pr checkout 123
+git checkout -b pr-123-feedback
+
+# implement updates
+
+git status
+git add -A
+git commit -m "PR 123 feedback fixes"
+
+git push -u origin pr-123-feedback
+gh pr create --base <original-pr-head-branch> --head pr-123-feedback \
+  --title "PR 123 feedback fixes" \
+  --body "Addresses unaddressed review feedback from PR 123. Prioritized owner comments; ignored items the owner said to skip."
+```
