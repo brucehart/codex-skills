@@ -54,6 +54,7 @@ Implement unaddressed PR feedback by reading the PR conversation and review thre
   - `git push -u origin pr-<PR#>-feedback`
   - `gh pr create --base <original-pr-head-branch> --head pr-<PR#>-feedback --title "PR <PR#> feedback fixes" --body "Addresses unaddressed review feedback from PR <PR#>. Prioritized owner comments; ignored items the owner said to skip."`
 - If the repo uses stacked PR conventions (labels, prefixes, or templates), follow them.
+- After the sub-PR is committed and pushed, comment on the original PR with a link to the new sub-PR and a brief description of the changes it includes.
 
 ### 7) Summarize and notify
 
