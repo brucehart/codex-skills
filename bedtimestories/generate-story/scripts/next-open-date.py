@@ -33,12 +33,21 @@ def fetch_calendar_days(base_url: str, start: datetime.date, end: datetime.date,
     url = f"{base_url}/api/stories/calendar?{params}"
     req = urllib.request.Request(url)
     req.add_header("X-Story-Token", story_token)
+    req.add_header(
+        "User-Agent",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    )
+    req.add_header("Accept", "application/json")
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req, timeout=30) as resp:
             if resp.status != 200:
                 body = resp.read().decode("utf-8", "replace")
                 raise RuntimeError(f"Calendar request failed ({resp.status}): {body}")
             payload = json.load(resp)
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", "replace")
+        raise RuntimeError(f"Calendar request failed ({exc.code}): {body}") from exc
     except Exception as exc:
         raise RuntimeError(f"Calendar request failed: {exc}") from exc
 
