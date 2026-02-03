@@ -47,17 +47,71 @@ echo
 files=$(git diff --cached --name-only)
 file_count=$(echo "$files" | sed '/^$/d' | wc -l | tr -d ' ')
 
-title="Update $file_count file"
-if [ "$file_count" != "1" ]; then
-  title="Update $file_count files"
+added=()
+modified=()
+deleted=()
+renamed=()
+all_paths=()
+
+while IFS= read -r -d '' status; do
+  IFS= read -r -d '' path1 || break
+  if [[ "$status" == R* ]]; then
+    IFS= read -r -d '' path2 || break
+    renamed+=("$path1 -> $path2")
+    all_paths+=("$path2")
+  else
+    case "$status" in
+      A) added+=("$path1") ;;
+      M) modified+=("$path1") ;;
+      D) deleted+=("$path1") ;;
+      *) modified+=("$path1") ;;
+    esac
+    all_paths+=("$path1")
+  fi
+done < <(git diff --cached --name-status -z)
+
+action="Update"
+if [ "${#added[@]}" -gt 0 ] && [ "${#modified[@]}" -eq 0 ] && [ "${#deleted[@]}" -eq 0 ] && [ "${#renamed[@]}" -eq 0 ]; then
+  action="Add"
+elif [ "${#deleted[@]}" -gt 0 ] && [ "${#added[@]}" -eq 0 ] && [ "${#modified[@]}" -eq 0 ] && [ "${#renamed[@]}" -eq 0 ]; then
+  action="Remove"
+elif [ "${#renamed[@]}" -gt 0 ] && [ "${#added[@]}" -eq 0 ] && [ "${#modified[@]}" -eq 0 ] && [ "${#deleted[@]}" -eq 0 ]; then
+  action="Rename"
 fi
 
-short_files=$(echo "$files" | head -n 2 | paste -sd ", " -)
-if [ -n "$short_files" ]; then
-  candidate="$title: $short_files"
-  if [ ${#candidate} -le 72 ]; then
-    title="$candidate"
+scope="repo"
+if [ "${#all_paths[@]}" -gt 0 ]; then
+  common_prefix="${all_paths[0]}"
+  for path in "${all_paths[@]}"; do
+    while [ -n "$common_prefix" ] && [[ "$path" != "$common_prefix" && "$path" != "$common_prefix/"* ]]; do
+      common_prefix=$(dirname "$common_prefix")
+      if [ "$common_prefix" = "." ] || [ "$common_prefix" = "/" ]; then
+        common_prefix=""
+        break
+      fi
+    done
+  done
+
+  if [ -n "$common_prefix" ]; then
+    if [ "$file_count" -eq 1 ]; then
+      scope="${all_paths[0]}"
+    else
+      scope="$common_prefix"
+    fi
   fi
+fi
+
+title="$action $scope"
+if [ "$scope" = "repo" ]; then
+  title="$action project files"
+fi
+
+if [ "$file_count" -gt 1 ]; then
+  title="$title ($file_count files)"
+fi
+
+if [ ${#title} -gt 72 ]; then
+  title=$(echo "$title" | cut -c1-69 | sed 's/[[:space:]]*$//')"..."
 fi
 
 msg_file=$(mktemp)
@@ -65,7 +119,34 @@ msg_file=$(mktemp)
   echo "$title"
   echo
   echo "Summary:"
-  echo "$files" | sed '/^$/d' | sed 's/^/- /'
+  if [ "${#added[@]}" -gt 0 ]; then
+    echo "- Added (${#added[@]}):"
+    printf '%s\n' "${added[@]}" | head -n 5 | sed 's/^/  - /'
+    if [ "${#added[@]}" -gt 5 ]; then
+      echo "  - ...and $(( ${#added[@]} - 5 )) more"
+    fi
+  fi
+  if [ "${#modified[@]}" -gt 0 ]; then
+    echo "- Updated (${#modified[@]}):"
+    printf '%s\n' "${modified[@]}" | head -n 5 | sed 's/^/  - /'
+    if [ "${#modified[@]}" -gt 5 ]; then
+      echo "  - ...and $(( ${#modified[@]} - 5 )) more"
+    fi
+  fi
+  if [ "${#deleted[@]}" -gt 0 ]; then
+    echo "- Removed (${#deleted[@]}):"
+    printf '%s\n' "${deleted[@]}" | head -n 5 | sed 's/^/  - /'
+    if [ "${#deleted[@]}" -gt 5 ]; then
+      echo "  - ...and $(( ${#deleted[@]} - 5 )) more"
+    fi
+  fi
+  if [ "${#renamed[@]}" -gt 0 ]; then
+    echo "- Renamed (${#renamed[@]}):"
+    printf '%s\n' "${renamed[@]}" | head -n 5 | sed 's/^/  - /'
+    if [ "${#renamed[@]}" -gt 5 ]; then
+      echo "  - ...and $(( ${#renamed[@]} - 5 )) more"
+    fi
+  fi
   echo
   echo "Stats:"
   git diff --cached --stat
