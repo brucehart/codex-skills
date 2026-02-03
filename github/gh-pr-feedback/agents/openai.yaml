@@ -1,0 +1,4 @@
+interface:
+  display_name: "GH PR Feedback"
+  short_description: "Address PR feedback with a stacked PR"
+  default_prompt: "Review the specified PR comments and review threads, prioritize project owner feedback, implement unaddressed fixes on a new branch from the PR head, and open a stacked PR targeting the original PR branch."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "GH Issue Fix PR"
+  short_description: "Fix issues and open a PR with gh"
+  default_prompt: "Read the specified GitHub issue(s), create a branch from the default base, implement the requested changes, commit with a clear message, and open a PR against main that links the issue(s) (Fixes/Closes)."
