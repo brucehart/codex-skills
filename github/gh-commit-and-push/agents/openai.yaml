@@ -1,0 +1,4 @@
+interface:
+  display_name: "GH Commit and Push"
+  short_description: "Pull, stage, commit, and push changes"
+  default_prompt: "Pull from origin, stage new and modified files, inspect diffs, generate a detailed commit message, commit to the current or specified branch, and push to origin."
