@@ -13,9 +13,14 @@ You will be given:
 - Optionally a markdown file name that may include a date.
 
 Required environment variables:
-- `REPLICATE_API_TOKEN` for Replicate.
+- `GEMINI_API_KEY` for Google Vertex (Gemini).
 - `STORY_API_TOKEN` for the worker automation API.
 - `STORY_API_BASE_URL` (optional). If not set, use `https://bedtimestories.bruce-hart.workers.dev`.
+
+Activate the Python venv for any steps that run Python:
+```bash
+source ~/scripts/.venv/bin/activate
+```
 
 Use the following workflow exactly.
 
@@ -81,115 +86,170 @@ Story format requirements:
 - Use short paragraphs separated by blank lines.
 - Keep sentences short and easy to read.
 
-## Step 2: Generate a cover image (Replicate)
-Model: `google/nano-banana-pro`
+## Step 2: Generate a cover image (Google Vertex Gemini)
+Model: `gemini-3-pro-image-preview`
 
 Image requirements:
 - Landscape, 16:9.
+- 1K resolution.
 - Cartoon aesthetic.
 - No text, letters, or signage.
 - Only include characters relevant to the selected scene.
-- Incorporate reference images as guidance when available.
+- Incorporate reference images as guidance when available (describe them in the prompt).
 
-Convert local reference images to data URIs for `image_input` (list up to 14). Example (Python):
+Install dependency:
+```bash
+pip install google-genai
+```
+
+Generate and save the image locally (example):
 ```bash
 python - <<'PY'
-import base64, json, mimetypes, pathlib
-paths = list(pathlib.Path("PATH_TO_FOLDER").glob("*.*"))
-inputs = []
-for p in paths:
-    mime = mimetypes.guess_type(p.name)[0] or "application/octet-stream"
-    data = base64.b64encode(p.read_bytes()).decode("ascii")
-    inputs.append(f"data:{mime};base64,{data}")
-print(json.dumps(inputs))
+import mimetypes
+import os
+from google import genai
+from google.genai import types
+
+def save_binary_file(file_name, data):
+    with open(file_name, "wb") as f:
+        f.write(data)
+    print(f"File saved to: {file_name}")
+
+def generate():
+    client = genai.Client(
+        api_key=os.environ.get("GEMINI_API_KEY"),
+    )
+
+    model = "gemini-3-pro-image-preview"
+    contents = [
+        types.Content(
+            role="user",
+            parts=[
+                types.Part.from_text(
+                    text="YOUR_IMAGE_PROMPT. 16:9 landscape, 1K resolution, cartoon style, no text."
+                ),
+            ],
+        ),
+    ]
+    generate_content_config = types.GenerateContentConfig(
+        response_modalities=[
+            "IMAGE",
+            "TEXT",
+        ],
+        image_config=types.ImageConfig(
+            image_size="1K",
+        ),
+    )
+
+    file_index = 0
+    for chunk in client.models.generate_content_stream(
+        model=model,
+        contents=contents,
+        config=generate_content_config,
+    ):
+        if (
+            chunk.candidates is None
+            or chunk.candidates[0].content is None
+            or chunk.candidates[0].content.parts is None
+        ):
+            continue
+        part = chunk.candidates[0].content.parts[0]
+        if part.inline_data and part.inline_data.data:
+            file_name = f"/tmp/story-image-{file_index}"
+            file_index += 1
+            inline_data = part.inline_data
+            data_buffer = inline_data.data
+            file_extension = mimetypes.guess_extension(inline_data.mime_type)
+            save_binary_file(f"{file_name}{file_extension}", data_buffer)
+        else:
+            print(chunk.text)
+
+if __name__ == "__main__":
+    generate()
 PY
 ```
 
-If there are no reference images, set `image_input` to an empty list.
+Use the saved image file (e.g., `/tmp/story-image-0.jpg`) for upload.
 
-Create the image prediction:
-```bash
-curl -s https://api.replicate.com/v1/models/google/nano-banana-pro/predictions \
-  -H "Authorization: Token $REPLICATE_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "input": {
-      "prompt": "YOUR_IMAGE_PROMPT",
-      "image_input": [DATA_URI_LIST],
-      "aspect_ratio": "16:9",
-      "resolution": "2K",
-      "output_format": "jpg",
-      "safety_filter_level": "block_only_high"
-    }
-  }'
-```
-
-Poll until `status` is `succeeded`:
-```bash
-curl -s https://api.replicate.com/v1/predictions/PREDICTION_ID \
-  -H "Authorization: Token $REPLICATE_API_TOKEN"
-```
-Save the `output` URL when ready.
-
-Alternate image model (use if nano-banana-pro fails):
-- Model: `black-forest-labs/flux-1.1-pro`
-- Aspect ratio: 3:2
-- Output format: png
-- Schema: https://replicate.com/black-forest-labs/flux-1.1-pro/api/schema
-
-Create the Flux image prediction:
-```bash
-curl -s https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions \
-  -H "Authorization: Token $REPLICATE_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "input": {
-      "prompt": "YOUR_IMAGE_PROMPT",
-      "aspect_ratio": "3:2",
-      "output_format": "png"
-    }
-  }'
-```
-
-## Step 3: Generate a short video (Replicate)
-Primary model: `pixverse/pixverse-v5`
+## Step 3: Generate a short video (Google Vertex Veo)
+Model: `veo-3.1-fast-generate-preview`
 
 Video requirements:
 - 16:9 landscape.
+- 8 seconds.
+- 24 fps.
 - Cartoon aesthetic.
 - No text or letters.
-- Use the generated image as the `image` input for consistency.
 - Use the story to build a concise scene prompt.
-- Use 5 seconds, normal (effect `None`), 540p.
 
-Create the PixVerse video prediction:
+Install dependency:
 ```bash
-curl -s https://api.replicate.com/v1/models/pixverse/pixverse-v5/predictions \
-  -H "Authorization: Token $REPLICATE_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "input": {
-      "prompt": "YOUR_VIDEO_PROMPT",
-      "image": "GENERATED_IMAGE_URL",
-      "aspect_ratio": "16:9",
-      "duration": 5,
-      "quality": "540p",
-      "effect": "None"
-    }
-  }'
+pip install google-genai pillow
 ```
 
-Poll until `status` is `succeeded` and record the `output` URL.
-
-Download the generated assets locally before uploading:
+Generate and save the video locally (example):
 ```bash
-curl -L "IMAGE_OUTPUT_URL" -o /tmp/story-image.jpg
-curl -L "VIDEO_OUTPUT_URL" -o /tmp/story-video.mp4
+python - <<'PY'
+import time
+import os
+from google import genai
+from google.genai import types
+
+MODEL = "veo-3.1-fast-generate-preview"
+
+client = genai.Client(
+    http_options={"api_version": "v1beta"},
+    api_key=os.environ.get("GEMINI_API_KEY"),
+)
+
+video_config = types.GenerateVideosConfig(
+    aspect_ratio="16:9",
+    number_of_videos=1,
+    duration_seconds=8,
+    frame_rate=24,
+    person_generation="ALLOW_ALL",
+    resolution="720p",
+)
+
+def generate():
+    operation = client.models.generate_videos(
+        model=MODEL,
+        prompt="YOUR_VIDEO_PROMPT. 16:9 landscape, 8s, 24 fps, cartoon style, no text.",
+        config=video_config,
+    )
+
+    while not operation.done:
+        print("Video has not been generated yet. Check again in 10 seconds...")
+        time.sleep(10)
+        operation = client.operations.get(operation)
+
+    result = operation.result
+    if not result:
+        print("Error occurred while generating video.")
+        return
+
+    generated_videos = result.generated_videos
+    if not generated_videos:
+        print("No videos were generated.")
+        return
+
+    print(f"Generated {len(generated_videos)} video(s).")
+    for n, generated_video in enumerate(generated_videos):
+        print(f"Video has been generated: {generated_video.video.uri}")
+        client.files.download(file=generated_video.video)
+        generated_video.video.save(f"/tmp/story-video-{n}.mp4")
+        print(f"Video {generated_video.video.uri} has been downloaded to /tmp/story-video-{n}.mp4.")
+
+if __name__ == "__main__":
+    generate()
+PY
 ```
+
+Use the saved video file (e.g., `/tmp/story-video-0.mp4`) for upload.
 
 Re-encode the video for iPhone compatibility before uploading:
 ```bash
-ffmpeg -y -i /tmp/story-video.mp4 \
+ffmpeg -y -i /tmp/story-video-0.mp4 \
   -c:v libx264 -profile:v high -level 4.0 -pix_fmt yuv420p \
   -c:a aac -b:a 128k -movflags +faststart \
   /tmp/story-video-encoded.mp4
