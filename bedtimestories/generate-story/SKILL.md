@@ -181,6 +181,8 @@ Video requirements:
 - Cartoon aesthetic.
 - No text or letters.
 - Use the story to build a concise scene prompt.
+- Use the generated cover image as a visual reference in the video request.
+Note: `frame_rate` is not accepted by the current `GenerateVideosConfig` schema. Keep 24 fps in the prompt instead.
 
 Install dependency:
 ```bash
@@ -192,6 +194,7 @@ Generate and save the video locally (example):
 python - <<'PY'
 import time
 import os
+import mimetypes
 from google import genai
 from google.genai import types
 
@@ -206,15 +209,20 @@ video_config = types.GenerateVideosConfig(
     aspect_ratio="16:9",
     number_of_videos=1,
     duration_seconds=8,
-    frame_rate=24,
     person_generation="ALLOW_ALL",
     resolution="720p",
 )
 
 def generate():
+    image_path = "/tmp/story-image-0.jpg"
+    mime_type, _ = mimetypes.guess_type(image_path)
+    with open(image_path, "rb") as f:
+        image_bytes = f.read()
+    reference_image = types.Image(imageBytes=image_bytes, mimeType=mime_type or "image/jpeg")
     operation = client.models.generate_videos(
         model=MODEL,
         prompt="YOUR_VIDEO_PROMPT. 16:9 landscape, 8s, 24 fps, cartoon style, no text.",
+        image=reference_image,
         config=video_config,
     )
 
