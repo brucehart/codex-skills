@@ -24,6 +24,8 @@ source ~/scripts/.venv/bin/activate
 
 Use the following workflow exactly.
 
+The image script prints the generated image path so it can be passed to the video script.
+
 ## Step 0: Resolve story date
 1) If the folder name contains a `YYYY-MM-DD` date, use that.
 2) Else if the markdown file name contains a `YYYY-MM-DD` date, use that.
@@ -76,7 +78,9 @@ Granny is short with short gray hair.
 
 Grandma has short blonde hair and glasses.
 
-Grandpa is bald and clean shaven.
+Grandpa Bruce is bald and clean shaven.
+
+Grandpa Rick is bald, clean shaven and wears glasses.
 
 Trixie is a black cat with short legs, white paws, black chin, black face and a white chest.
 
@@ -104,72 +108,12 @@ pip install google-genai
 
 Generate and save the image locally (example):
 ```bash
-python - <<'PY'
-import mimetypes
-import os
-from google import genai
-from google.genai import types
-
-def save_binary_file(file_name, data):
-    with open(file_name, "wb") as f:
-        f.write(data)
-    print(f"File saved to: {file_name}")
-
-def generate():
-    client = genai.Client(
-        api_key=os.environ.get("GEMINI_API_KEY"),
-    )
-
-    model = "gemini-3-pro-image-preview"
-    contents = [
-        types.Content(
-            role="user",
-            parts=[
-                types.Part.from_text(
-                    text="YOUR_IMAGE_PROMPT. 16:9 landscape, 1K resolution, cartoon style, no text."
-                ),
-            ],
-        ),
-    ]
-    generate_content_config = types.GenerateContentConfig(
-        response_modalities=[
-            "IMAGE",
-            "TEXT",
-        ],
-        image_config=types.ImageConfig(
-            image_size="1K",
-        ),
-    )
-
-    file_index = 0
-    for chunk in client.models.generate_content_stream(
-        model=model,
-        contents=contents,
-        config=generate_content_config,
-    ):
-        if (
-            chunk.candidates is None
-            or chunk.candidates[0].content is None
-            or chunk.candidates[0].content.parts is None
-        ):
-            continue
-        part = chunk.candidates[0].content.parts[0]
-        if part.inline_data and part.inline_data.data:
-            file_name = f"/tmp/story-image-{file_index}"
-            file_index += 1
-            inline_data = part.inline_data
-            data_buffer = inline_data.data
-            file_extension = mimetypes.guess_extension(inline_data.mime_type)
-            save_binary_file(f"{file_name}{file_extension}", data_buffer)
-        else:
-            print(chunk.text)
-
-if __name__ == "__main__":
-    generate()
-PY
+IMAGE_PATH=$(python /mnt/c/Users/admin/Documents/Code/bedtimestories/.codex/skills/generate-story/scripts/generate-image.py \
+  "YOUR_IMAGE_PROMPT")
 ```
 
-Use the saved image file (e.g., `/tmp/story-image-0.jpg`) for upload.
+The script saves the image(s) under `/tmp` and prints the first image path as output.
+Use the saved image file (e.g., the value in `$IMAGE_PATH`) for upload and as input to the video step.
 
 ## Step 3: Generate a short video (Google Vertex Veo)
 Model: `veo-3.1-fast-generate-preview`
@@ -191,73 +135,16 @@ pip install google-genai pillow
 
 Generate and save the video locally (example):
 ```bash
-python - <<'PY'
-import time
-import os
-import mimetypes
-from google import genai
-from google.genai import types
-
-MODEL = "veo-3.1-fast-generate-preview"
-
-client = genai.Client(
-    http_options={"api_version": "v1beta"},
-    api_key=os.environ.get("GEMINI_API_KEY"),
-)
-
-video_config = types.GenerateVideosConfig(
-    aspect_ratio="16:9",
-    number_of_videos=1,
-    duration_seconds=8,
-    person_generation="ALLOW_ALL",
-    resolution="720p",
-)
-
-def generate():
-    image_path = "/tmp/story-image-0.jpg"
-    mime_type, _ = mimetypes.guess_type(image_path)
-    with open(image_path, "rb") as f:
-        image_bytes = f.read()
-    reference_image = types.Image(imageBytes=image_bytes, mimeType=mime_type or "image/jpeg")
-    operation = client.models.generate_videos(
-        model=MODEL,
-        prompt="YOUR_VIDEO_PROMPT. 16:9 landscape, 8s, 24 fps, cartoon style, no text.",
-        image=reference_image,
-        config=video_config,
-    )
-
-    while not operation.done:
-        print("Video has not been generated yet. Check again in 10 seconds...")
-        time.sleep(10)
-        operation = client.operations.get(operation)
-
-    result = operation.result
-    if not result:
-        print("Error occurred while generating video.")
-        return
-
-    generated_videos = result.generated_videos
-    if not generated_videos:
-        print("No videos were generated.")
-        return
-
-    print(f"Generated {len(generated_videos)} video(s).")
-    for n, generated_video in enumerate(generated_videos):
-        print(f"Video has been generated: {generated_video.video.uri}")
-        client.files.download(file=generated_video.video)
-        generated_video.video.save(f"/tmp/story-video-{n}.mp4")
-        print(f"Video {generated_video.video.uri} has been downloaded to /tmp/story-video-{n}.mp4.")
-
-if __name__ == "__main__":
-    generate()
-PY
+VIDEO_PATH=$(python /mnt/c/Users/admin/Documents/Code/bedtimestories/.codex/skills/generate-story/scripts/generate-video.py \
+  "$IMAGE_PATH" \
+  "YOUR_VIDEO_PROMPT")
 ```
 
-Use the saved video file (e.g., `/tmp/story-video-0.mp4`) for upload.
+Use the saved video file (e.g., the value in `$VIDEO_PATH`) for upload.
 
 Re-encode the video for iPhone compatibility before uploading:
 ```bash
-ffmpeg -y -i /tmp/story-video-0.mp4 \
+ffmpeg -y -i "$VIDEO_PATH" \
   -c:v libx264 -profile:v high -level 4.0 -pix_fmt yuv420p \
   -c:a aac -b:a 128k -movflags +faststart \
   /tmp/story-video-encoded.mp4
