@@ -1,0 +1,4 @@
+interface:
+  display_name: "Draft Article"
+  short_description: "Create a new blog post draft via the Bhart Blog Automation API"
+  default_prompt: "Draft a new post using the Bhart house style from subject and thoughts, and submit it as a draft unless the user asks otherwise."
