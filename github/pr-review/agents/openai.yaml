@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR Review"
+  short_description: "Review pending GitHub PRs for security and correctness issues"
+  default_prompt: "Conduct pending PR reviews: inspect diff, all PR comments, and attached PRs, then post severity-tagged findings to the PR comments section."
