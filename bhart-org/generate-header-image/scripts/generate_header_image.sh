@@ -12,9 +12,9 @@ Options:
   --prompt-file <file>            Read prompt text from a file
   --logo-url <url>                URL for a logo to include (also passed as an input image when supported)
   --alt <text>                    Alt text (if omitted, a basic one is generated)
-  --model <name>                  Gemini model (default: gemini-3-pro-image-preview)
+  --model <name>                  Replicate model slug (default: google/nano-banana-pro)
   --aspect-ratio <ratio>          Aspect ratio (default: 16:9)
-  --resolution <val>              Model resolution (default: 1K)
+  --resolution <val>              Model resolution (default: 2K)
   --gen-timeout <seconds>         Timeout for image generation (default: 180)
   --gen-retries <count>           Retry count for image generation (default: 2)
   --upload-mode <mode>            Upload mode: direct|import|skip (default: direct)
@@ -25,7 +25,7 @@ Options:
 
 Env:
   CODEX_BHART_API_TOKEN
-  GEMINI_API_KEY
+  REPLICATE_API_TOKEN
 
 Examples:
   bash generate_header_image.sh --slug web-tools-my-tiny-tool-factory-on-cloudflare-workers \
@@ -52,11 +52,11 @@ prompt=""
 prompt_file=""
 logo_url=""
 alt_text=""
-gemini_model="gemini-3-pro-image-preview"
+image_model="google/nano-banana-pro"
 key_prefix="headers"
 api_base="https://bhart-org.bruce-hart.workers.dev/api/codex/v1"
 aspect_ratio="16:9"
-resolution="1K"
+resolution="2K"
 upload_mode="direct"
 upload_endpoint=""
 gen_timeout="180"
@@ -71,7 +71,7 @@ while [ $# -gt 0 ]; do
     --prompt-file) prompt_file="${2:-}"; shift 2 ;;
     --logo-url) logo_url="${2:-}"; shift 2 ;;
     --alt) alt_text="${2:-}"; shift 2 ;;
-    --model) gemini_model="${2:-}"; shift 2 ;;
+    --model) image_model="${2:-}"; shift 2 ;;
     --aspect-ratio) aspect_ratio="${2:-}"; shift 2 ;;
     --resolution) resolution="${2:-}"; shift 2 ;;
     --gen-timeout) gen_timeout="${2:-}"; shift 2 ;;
@@ -89,7 +89,7 @@ done
 need_bin curl
 need_bin jq
 need_env CODEX_BHART_API_TOKEN
-need_env GEMINI_API_KEY
+need_env REPLICATE_API_TOKEN
 
 if [ -n "$prompt_file" ]; then
   if [ ! -f "$prompt_file" ]; then
@@ -160,7 +160,7 @@ fi
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 python_args=(
   --prompt "$prompt"
-  --model "$gemini_model"
+  --model "$image_model"
   --aspect-ratio "$aspect_ratio"
   --resolution "$resolution"
 )
@@ -191,7 +191,7 @@ done
 
 if [ -z "$image_path" ] || [ ! -f "$image_path" ]; then
   echo "Failed to generate image file." >&2
-  echo "Tip: ensure google-genai is installed in ~/scripts/.venv." >&2
+  echo "Tip: verify REPLICATE_API_TOKEN and model access on Replicate." >&2
   exit 1
 fi
 
@@ -214,8 +214,8 @@ while [ "$upload_attempt" -lt "$upload_max_attempts" ]; do
       -F "author_name=${author_name}" \
       -F "author_email=${author_email}" \
       -F "key_prefix=${key_prefix}" \
-      -F "internal_description=Generated via Gemini (${gemini_model})" \
-      -F "tags=[\"header\",\"generated\",\"gemini\"]" \
+      -F "internal_description=Generated via Replicate (${image_model})" \
+      -F "tags=[\"header\",\"generated\",\"replicate\"]" \
       "$api_base/media/upload")"
   else
     echo "Uploading generated image to temp host (attempt $upload_attempt/$upload_max_attempts)..." >&2
@@ -231,7 +231,7 @@ while [ "$upload_attempt" -lt "$upload_max_attempts" ]; do
         --arg author_name "$author_name" \
         --arg author_email "$author_email" \
         --arg key_prefix "$key_prefix" \
-        --arg internal_description "Generated via Gemini ($gemini_model)" \
+        --arg internal_description "Generated via Replicate ($image_model)" \
         '{
           source_url: $source_url,
           alt_text: $alt_text,
@@ -239,7 +239,7 @@ while [ "$upload_attempt" -lt "$upload_max_attempts" ]; do
           author_email: $author_email,
           key_prefix: $key_prefix,
           internal_description: $internal_description,
-          tags: ["header", "generated", "gemini"]
+          tags: ["header", "generated", "replicate"]
         }')"
       media_json="$(curl -sS "${auth_header[@]}" \
         -H "Content-Type: application/json" \
