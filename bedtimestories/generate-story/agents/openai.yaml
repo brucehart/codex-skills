@@ -1,4 +1,0 @@
-interface:
-  display_name: "Generate Story"
-  short_description: "Draft a new bedtime story"
-  default_prompt: "Draft a new bedtime story and generate associated cover image, video, and story record using the bedtime story workflow."
