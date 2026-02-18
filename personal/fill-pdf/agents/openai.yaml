@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fill PDF"
+  short_description: "Fill PDF forms with pdftk from context data"
+  default_prompt: "Use pdftk to inspect fillable fields, map provided context to form keys, and output a filled PDF."
