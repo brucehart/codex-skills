@@ -13,8 +13,17 @@ Website: https://bhart.org
 ## Contents
 
 - `bedtimestories/` — Story-oriented skill(s) used for narrative tasks.
+- `bhart-org/` — Content and media workflow skill(s) for bhart.org.
 - `euler/` — Problem‑solving skill(s) for math/logic exercises.
 - `github/` — GitHub workflow skill(s) for repo and PR automation.
+- `personal/` — Personal productivity and document workflow skill(s).
+
+## Recent updates
+
+- Added `personal/fill-pdf` skill for filling PDF forms.
+- Added `github/pr-review` skill for full PR review workflows.
+- Added `openai.yaml` metadata files across all skills for improved portability.
+- Updated and synced `bedtimestories/generate-story` and `bhart-org/generate-header-image` workflows.
 
 ## How I use these skills
 
