@@ -78,3 +78,15 @@ Implementation notes:
 
 - Determine `YYYY-MM-DD` from the document content when possible (prefer over filesystem timestamps).
 - If only month/year is present, ask the user how to date it (or use the last day of the month only with explicit confirmation).
+
+## HSA Output Format (Required)
+
+When reporting HSA-eligible receipts, output rows in a tab-separated format that can be copied directly into Google Sheets.
+
+- Header must be exactly:
+  - `Date Start	Date End	Paid Date	Patient	Provider	For	Amount	Receipt`
+- Use tab characters between all columns (TSV), not commas.
+- The `Receipt` column value must be the green checkbox emoji: `✅`.
+- `For` must be one of: `BJ`, `Stef`, `Grace`, `James`.
+  - If unclear which family member the expense is for, default `For` to `Stef`.
+- If a date is unknown, leave the cell blank rather than inventing a value.
