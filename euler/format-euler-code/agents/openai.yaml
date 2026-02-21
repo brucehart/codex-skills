@@ -1,0 +1,4 @@
+interface:
+  display_name: "Format Euler Code"
+  short_description: "Enforce Euler C++ formatting and style rules"
+  default_prompt: "Apply Euler repository C++ formatting and style conventions to code while preserving correctness."

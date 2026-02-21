@@ -1,0 +1,4 @@
+interface:
+  display_name: "Organize GDrive Inbox"
+  short_description: "Organize and triage files in /mnt/g/My Drive/Inbox"
+  default_prompt: "Classify, rename, and move files from Inbox into Personal destinations with a safe dry-run plan and change log."

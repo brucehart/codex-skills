@@ -1,0 +1,4 @@
+interface:
+  display_name: "Generate Header Image"
+  short_description: "Generate and upload a blog header image"
+  default_prompt: "Generate a blog header image with Replicate, upload it to Bhart R2, and update hero_image_url/hero_image_alt on the target post."
