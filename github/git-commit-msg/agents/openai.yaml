@@ -1,0 +1,4 @@
+interface:
+  display_name: "Git Commit Message"
+  short_description: "Analyze HEAD and amend commit message"
+  default_prompt: "Use $git-commit-msg to analyze the latest commit, preview a detailed structured message, and amend HEAD."
