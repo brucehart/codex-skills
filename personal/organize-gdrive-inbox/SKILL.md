@@ -81,11 +81,11 @@ Implementation notes:
 
 ## HSA Output Format (Required)
 
-When reporting HSA-eligible receipts, output rows in a tab-separated format that can be copied directly into Google Sheets.
+When reporting HSA-eligible receipts, output rows in a comma-separated format that can be copied directly into Google Sheets.
 
 - Header must be exactly:
-  - `Date Start	Date End	Paid Date	Patient	Provider	For	Amount	Receipt`
-- Use tab characters between all columns (TSV), not commas.
+  - `Date Start,Date End,Paid Date,Patient,Provider,For,Amount,Receipt`
+- Use commas between all columns (CSV), not tabs.
 - The `Receipt` column value must be the green checkbox emoji: `✅`.
 - `For` must be one of: `BJ`, `Stef`, `Grace`, `James`.
   - If unclear which family member the expense is for, default `For` to `Stef`.
