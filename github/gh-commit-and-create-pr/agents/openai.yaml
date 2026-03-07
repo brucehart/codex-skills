@@ -1,0 +1,4 @@
+interface:
+  display_name: "GH Commit and Create PR"
+  short_description: "Commit changes and open a PR"
+  default_prompt: "Use $gh-commit-and-create-pr to create a feature branch from my current changes, commit and push it, and open a PR with a detailed GitHub-compatible Markdown description."
