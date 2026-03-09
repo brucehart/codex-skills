@@ -83,10 +83,12 @@ Implementation notes:
 
 When reporting HSA-eligible receipts, output rows in a comma-separated format that can be copied directly into Google Sheets.
 
-- Header must be exactly:
-  - `Date Start,Date End,Paid Date,Patient,Provider,For,Amount,Receipt`
+- Header must be exactly: `Date Start,Date End,Paid Date,Patient,Provider,For,Amount,Receipt`
 - Use commas between all columns (CSV), not tabs.
+- Format date values as `M/D/YY` (example: `2/19/26`).
 - The `Receipt` column value must be the green checkbox emoji: `✅`.
-- `For` must be one of: `BJ`, `Stef`, `Grace`, `James`.
-  - If unclear which family member the expense is for, default `For` to `Stef`.
+- `Patient` must be one of: `BJ`, `Stef`, `Grace`, `James`.
+  - If unclear which family member the expense is for, default `Patient` to `Stef`.
+- `For` should describe the expense purpose (examples: `Office Visit`, `Dental`, `Rx`, `OTC Supplies/Medication`).
+  - If unknown, default `For` to `OTC Supplies/Medication`.
 - If a date is unknown, leave the cell blank rather than inventing a value.
