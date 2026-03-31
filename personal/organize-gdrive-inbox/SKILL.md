@@ -81,14 +81,28 @@ Implementation notes:
 
 ## HSA Output Format (Required)
 
-When reporting HSA-eligible receipts, output rows in a comma-separated format that can be copied directly into Google Sheets.
+When reporting HSA-eligible receipts, output rows in a tab-separated format that can be copied directly into Google Sheets.
 
-- Header must be exactly: `Date Start,Date End,Paid Date,Patient,Provider,For,Amount,Receipt`
-- Use commas between all columns (CSV), not tabs.
+- Header must be exactly:
+  - `Date Start	Date End	Paid Date	Patient	Provider	For	Amount	Receipt`
+- Emit the HSA output as a single fenced `tsv` code block containing only the header row plus data rows.
+  - Do not use markdown tables, bullets, numbering, inline code, alignment spaces, or prose inside that block.
+- Use literal tab characters between all columns (TSV), not commas and not the two-character sequence `\t`.
+- Every line in the TSV block must have exactly 8 cells / 7 tab separators so it pastes cleanly into the 8 Google Sheet columns above.
+- Do not pad cells with leading or trailing spaces to make columns look visually aligned in the response.
 - Format date values as `M/D/YY` (example: `2/19/26`).
+- Use plain numeric values in `Amount` with no `$` and no thousands separators (example: `12.95`).
 - The `Receipt` column value must be the green checkbox emoji: `✅`.
 - `Patient` must be one of: `BJ`, `Stef`, `Grace`, `James`.
   - If unclear which family member the expense is for, default `Patient` to `Stef`.
 - `For` should describe the expense purpose (examples: `Office Visit`, `Dental`, `Rx`, `OTC Supplies/Medication`).
   - If unknown, default `For` to `OTC Supplies/Medication`.
 - If a date is unknown, leave the cell blank rather than inventing a value.
+- Save the same TSV content verbatim to a timestamped file in `/tmp/` (for example `/tmp/organize_gdrive_inbox_hsa_<timestamp>.tsv`) and report that path in the final response.
+
+Example:
+
+```tsv
+Date Start	Date End	Paid Date	Patient	Provider	For	Amount	Receipt
+2/20/26	2/20/26		BJ	The Little Clinic	Office Visit	12.95	✅
+```
